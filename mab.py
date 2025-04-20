@@ -59,6 +59,8 @@ class Solver:
             self.actions.append(idx_arm)
             self.update_regret(idx_arm)
 
+#--------------------------------------------------------------------------------------------------------------
+# Epsilon Greedy Algorithm
 class EpsilonGreedy(Solver):
     """ Epsilon-Greedy Algorithm. """
     def __init__(self, bandit, epsilon=0.01, init_prob=1.0):
@@ -95,3 +97,39 @@ class DecayingEpsilonGreedy(Solver):
         return idx_arm
 
     
+#--------------------------------------------------------------------------------------------------------------
+# UCB Algorithm
+class UCB(Solver):
+    """ Upper Confidence Bound Algorithm. """
+    def __init__(self, bandit, coef, init_prob=1.0):
+        super(UCB, self).__init__(bandit)
+        self.total_count = 0
+        self.estimates = np.array([init_prob] * self.bandit.num_arms)
+        self.coef = coef
+        self.name = "UCB"
+    
+    def run_one_step(self):
+        self.total_count += 1
+        ucb = self.estimates + self.coef * np.sqrt(np.log(self.total_count) / (2 * (self.counts + 1)))
+        idx_arm = np.argmax(ucb)
+        r = self.bandit.step(idx_arm)
+        self.estimates[idx_arm] += (r - self.estimates[idx_arm]) / (self.counts[idx_arm] + 1)
+        return idx_arm
+
+#--------------------------------------------------------------------------------------------------------------
+# Thompson Sampling Algorithm
+class ThompsonSampling(Solver):
+    """ Thompson Sampling Algorithm. """
+    def __init__(self, bandit):
+        super(ThompsonSampling, self).__init__(bandit)
+        self._a = np.ones(self.bandit.num_arms)
+        self._b = np.ones(self.bandit.num_arms)
+    
+    def run_one_step(self):
+        samples = np.random.beta(self._a, self._b)
+        idx_arm = np.argmax(samples)
+        r = self.bandit.step(idx_arm)
+
+        self._a[idx_arm] += r
+        self._b[idx_arm] += (1 - r)
+        return idx_arm
