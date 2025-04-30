@@ -1,0 +1,14 @@
+[
+    {
+        "model_name": "trpo_cartpole(v0)",
+        "save_path": "./agent/trpo_cartpole(v0)_score200.00_20250430-004157.pth",
+        "timestamp": "2025-04-30 00:41:57",
+        "score": 200.0
+    },
+    {
+        "model_name": "trpo_pendulum(v1)",
+        "save_path": "./agent/trpo_pendulum(v1)_score-523.26_20250430-220744.pth",
+        "timestamp": "2025-04-30 22:07:45",
+        "score": -523.2553176193464
+    }
+]

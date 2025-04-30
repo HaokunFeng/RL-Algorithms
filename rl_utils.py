@@ -10,6 +10,7 @@ import math
 from moviepy import ImageSequenceClip, clips_array
 import json
 import matplotlib.pyplot as plt
+import pickle
 
 class ReplayBuffer:
     def __init__(self, capacity):
@@ -132,16 +133,186 @@ def moving_average(a, window_size):
     end = (np.cumsum(a[:-window_size:-1])[::2] / r)[::-1]
     return np.concatenate((begin, middle, end))
 
+def moving_average_score(data, window_size=10):
+    return np.mean(data[-window_size:]) if len(data) >= window_size else np.mean(data)
+
 # ---------------------------------------------------------------------------------------------
-# Functions to save and load models
+# Functions to save and load models, checkpoints, return_list, curves and logs
 # ---------------------------------------------------------------------------------------------
-def save_model(agent, save_path):
-    os.makedirs(os.path.dirname(save_path))
+def save_agent(agent, model_name, save_dir='./agent', score=None):
+    os.makedirs(save_dir, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    if score is not None:
+        save_path = os.path.join(save_dir, f"{model_name}_score{score:.2f}_{timestamp}.pth")
+    else:
+        save_path = os.path.join(save_dir, f"{model_name}_{timestamp}.pth")
+    torch.save(agent.state_dict(), save_path)
+    print(f"✅ Single agent saved at {save_path}")
+
+    _save_log(save_dir, model_name, save_path, score)
+
+def save_multi_agents(agent_dict, model_name, save_dir='./agent', score=None):
+    os.makedirs(save_dir, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    if score is not None:
+        save_path = os.path.join(save_dir, f"{model_name}_score{score:.2f}_{timestamp}.pth")
+    else:
+        save_path = os.path.join(save_dir, f"{model_name}_{timestamp}.pth")
+    state_dict = {name: agent.state_dict() for name, agent in agent_dict.items()}
+    torch.save(state_dict, save_path)
+    print(f"✅ Multi-agents saved at {save_path}")
+    _save_log(save_dir, model_name, save_path, score)
+
+def save_checkpoint(agent_dict, optimizer_dict, episode, model_name, save_dir='./agent'):
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, f"{model_name}_checkpoint_ep{episode}.pth")
+    state = {
+        'episode': episode,
+        'agent_state_dict': {name: agent.state_dict() for name, agent in agent_dict.items()},
+        'optimizer_state_dict': {name: opt.state_dict() for name, opt in optimizer_dict.items()}
+    }
+    torch.save(state, save_path)
+    print(f"✅ Checkpoint saved at {save_path}")
+    _save_log(save_dir, model_name, save_path, note=f"Checkpoint at episode {episode}")
+
+def save_return_list(return_list, save_path='./results', filename='return_list.pkl'):
+    os.makedirs(save_path, exist_ok=True)
+    save_path = os.path.join(save_path, filename)
+    with open(save_path, 'wb') as f:
+        pickle.dump(return_list, f)
+    print(f"✅ Return list saved at {save_path}")
+
+def save_return_curve(return_list, model_name, mv_return=None, save_dir='./results'):
+    os.makedirs(save_dir, exist_ok=True)
+    plt.figure()
+    plt.plot(return_list, label='Returns')
+    if mv_return is not None:
+        plt.plot(mv_return, label='Moving Average Return')
+    plt.legend()
+    plt.xlabel('Episode')
+    plt.ylabel('Return')
+    plt.title(f'Return Curve for {model_name}')
+    plt.grid(True)
+    curve_path = os.path.join(save_dir, f"{model_name}_return_curve.png")
+    plt.savefig(curve_path)
+    plt.close()
+    print(f"📈 Return curve saved at {curve_path}")
+
+def save_all(agent_dict, return_list, model_name, mv_return=None, score=None, save_dir_agent='./agent', save_dir_result='./results'):
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    suffix = f"_score{score:.2f}_{timestamp}" if score is not None else f"_{timestamp}"
+    
+    # Save model
+    os.makedirs(save_dir_agent, exist_ok=True)
+    model_filename = f"{model_name}{suffix}.pth"
+    model_path = os.path.join(save_dir_agent, model_filename)
+    state_dict = {name: agent.state_dict() for name, agent in agent_dict.items()}
+    torch.save(state_dict, model_path)
+    print(f"✅ Multi-agents saved at {model_path}")
+    _save_log(save_dir_agent, model_name, model_path, score)
+
+    # Save return list
+    os.makedirs(save_dir_result, exist_ok=True)
+    return_list_filename = f"{model_name}{suffix}_return_list.pkl"
+    return_list_path = os.path.join(save_dir_result, return_list_filename)
+    with open(return_list_path, 'wb') as f:
+        pickle.dump(return_list, f)
+    print(f"✅ Return list saved at {return_list_path}")
+
+    # Save return curve
+    curve_filename = f"{model_name}{suffix}_return_curve.png"
+    curve_path = os.path.join(save_dir_result, curve_filename)
+    plt.figure()
+    plt.plot(return_list, label='Returns')
+    if mv_return is not None:
+        plt.plot(mv_return, label='Moving Average Return')
+    plt.legend()
+    plt.xlabel('Episode')
+    plt.ylabel('Return')
+    plt.title(f'Return Curve for {model_name}')
+    plt.grid(True)
+    plt.savefig(curve_path)
+    plt.close()
+    print(f"📈 Return curve saved at {curve_path}")
+
+def load_all(agent_dict, model_name, timestamp, score=None, save_dir_agent='./agent', save_dir_result='./results', device='cpu'):
+    suffix = f"_score{score:.2f}_{timestamp}" if score is not None else f"_{timestamp}"
+
+    # Load model
+    model_path = os.path.join(save_dir_agent, f"{model_name}{suffix}.pth")
+    state_dicts = torch.load(model_path, map_location=device)
+    for name, agent in agent_dict.items():
+        agent.load_state_dict(state_dicts[name])
+    print(f"🔄 Multi-agents loaded from {model_path}")
+
+    # Load return list
+    return_list_path = os.path.join(save_dir_result, f"{model_name}{suffix}_return_list.pkl")
+    with open(return_list_path, 'rb') as f:
+        return_list = pickle.load(f)
+    print(f"🔄 Return list loaded from {return_list_path}")
+
+    # Optional: load return curve image path (not data)
+    curve_path = os.path.join(save_dir_result, f"{model_name}{suffix}_return_curve.png")
+    if os.path.exists(curve_path):
+        print(f"📈 Return curve image available at {curve_path}")
+    else:
+        print("⚠️ Return curve image not found.")
+
+    return agent_dict, return_list
 
 
 
+def load_agent(agent, load_path, device):
+    state_dict = torch.load(load_path, map_location=device)
+    agent.load_state_dict(state_dict)
+    print(f"🔄 Single agent loaded from {load_path}")
+    return agent
 
+def load_multi_agents(agent_dict, load_path, device):
+    state_dicts = torch.load(load_path, map_location=device)
+    for name, agent in agent_dict.items():
+        agent.load_state_dict(state_dicts[name])
+    print(f"🔄 Multi-agents loaded from {load_path}")
+    return agent_dict
 
+def load_checkpoint(agent_dict, optimizer_dict, load_path, device):
+    checkpoint = torch.load(load_path, map_location=device)
+    for name, agent in agent_dict.items():
+        agent.load_state_dict(checkpoint['agent_state_dict'][name])
+    for name, opt in optimizer_dict.items():
+        opt.load_state_dict(checkpoint['optimizer_state_dict'][name])
+    start_episode = checkpoint['episode']
+    print(f"🔄 Checkpoint loaded from {load_path}, starting from episode {start_episode}")
+    return agent_dict, optimizer_dict, start_episode
+
+def load_return_list(filepath):
+    with open(filepath, 'rb') as f:
+        return_list = pickle.load(f)
+    print(f"🔄 Return list loaded from {filepath}")
+    return return_list
+
+def _save_log(save_dir, model_name, save_path, score=None, note=None):
+    log_path = os.path.join(save_dir, "save_log.json")
+    log_data = []
+    if os.path.exists(log_path):
+        with open(log_path, 'r') as f:
+            log_data = json.load(f)
+
+    entry = {
+        "model_name": model_name,
+        "save_path": save_path,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    if score is not None:
+        entry["score"] = score
+    if note:
+        entry["note"] = note
+    
+    log_data.append(entry)
+
+    with open(log_path, 'w') as f:
+        json.dump(log_data, f, indent=4)
+    print(f"📝 Save log updated at {log_path}")
 
 # ---------------------------------------------------------------------------------------------------------------
 # Functions to display and record agent performance
@@ -166,8 +337,14 @@ def watch_agent(env_name, agent, device, sleep_time=0.01, num_episodes=1):
         env.close()
 
 
-def record_one_episode(env_name, agent, device, save_path='./video', filename='agent_play', fps=30):
-    os.makedirs(save_path, exist_ok=True)
+def record_one_episode(env_name, agent, device, save_dir='./video', filename='agent_play', score=None, fps=30):
+    os.makedirs(save_dir, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    if score is not None:
+        save_path = os.path.join(save_dir, f"{filename}_score{score:.2f}_{timestamp}.gif")
+    else:
+        save_path = os.path.join(save_dir, f"{filename}_{timestamp}.gif")
+
     env_fn = lambda: gym.make(env_name, render_mode='rgb_array')
     env = env_fn()
     frames = []
@@ -187,10 +364,17 @@ def record_one_episode(env_name, agent, device, save_path='./video', filename='a
 
     env.close()
     clip = ImageSequenceClip(frames, fps=fps)
-    clip.write_gif(os.path.join(save_path, f'{filename}.gif'), fps=fps)
+    clip.write_gif(save_path, fps=fps)
+    print(f"✅ Video saved at {save_path}")
 
-def record_multiple_episodes(env_name, agent, device, num_episodes=10, videos_per_row=5, save_path='./video', filename='agent_multi_play', fps=30):
-    os.makedirs(save_path, exist_ok=True)
+def record_multiple_episodes(env_name, agent, device, num_episodes=10, videos_per_row=5, save_dir='./video', filename='agent_multi_play', score=None, fps=30):
+    os.makedirs(save_dir, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    if score is not None:
+        save_path = os.path.join(save_dir, f"{filename}_score{score:.2f}_{timestamp}.gif")
+    else:
+        save_path = os.path.join(save_dir, f"{filename}_{timestamp}.gif")
+
     env_fn = lambda: gym.make(env_name, render_mode='rgb_array')
     all_clips = []
     for ep in range(num_episodes):
@@ -221,6 +405,7 @@ def record_multiple_episodes(env_name, agent, device, num_episodes=10, videos_pe
         rows.append(row)
     
     final_clip = clips_array(rows)
-    final_clip.write_gif(os.path.join(save_path, f'{filename}.gif'), fps=fps)
+    final_clip.write_gif(save_path, fps=fps)
+    print(f"✅ Video saved at {save_path}")
 
 
