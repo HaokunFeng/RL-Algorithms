@@ -10,5 +10,17 @@
         "save_path": "./agent/trpo_pendulum(v1)_score-523.26_20250430-220744.pth",
         "timestamp": "2025-04-30 22:07:45",
         "score": -523.2553176193464
+    },
+    {
+        "model_name": "ppo_cartpole(v0)",
+        "save_path": "./agent/ppo_cartpole(v0)_score200.00_20250501-044913.pth",
+        "timestamp": "2025-05-01 04:49:13",
+        "score": 200.0
+    },
+    {
+        "model_name": "ppo_pendulum(v1)",
+        "save_path": "./agent/ppo_pendulum(v1)_score-468.17_20250501-055929.pth",
+        "timestamp": "2025-05-01 05:59:29",
+        "score": -468.16850084854684
     }
 ]
