@@ -22,5 +22,11 @@
         "save_path": "./agent/ppo_pendulum(v1)_score-468.17_20250501-055929.pth",
         "timestamp": "2025-05-01 05:59:29",
         "score": -468.16850084854684
+    },
+    {
+        "model_name": "ddpg_pendulum(v1)",
+        "save_path": "./agent/ddpg_pendulum(v1)_score-156.32_20250502-022144.pth",
+        "timestamp": "2025-05-02 02:21:44",
+        "score": -156.32471084579862
     }
 ]

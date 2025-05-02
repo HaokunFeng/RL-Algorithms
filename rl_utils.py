@@ -31,7 +31,9 @@ class ReplayBuffer:
 # Functions to train on-policy and off-policy agents
 # ---------------------------------------------------------------------------------------------
 
-def train_on_policy_agent(env, agent, num_episodes):
+def train_on_policy_agent(env,
+                          agent,
+                          num_episodes):
     return_list = []
     for i in range(10):
         with tqdm(total=int(num_episodes/10), desc='Iteration %d' % i) as pbar:
@@ -72,7 +74,12 @@ def train_on_policy_agent(env, agent, num_episodes):
     return return_list
 
 
-def train_off_policy_agent(env, agent, num_episodes, replay_buffer, minimal_size, batch_size):
+def train_off_policy_agent(env, 
+                           agent, 
+                           num_episodes, 
+                           replay_buffer, 
+                           minimal_size, 
+                           batch_size):
     return_list = []
     for i in range(10):
         with tqdm(total=int(num_episodes/10), desc='Iteration %d' % i) as pbar:
@@ -114,7 +121,9 @@ def train_off_policy_agent(env, agent, num_episodes, replay_buffer, minimal_size
 # Functions to compute advantage and moving average
 # ---------------------------------------------------------------------------------------------
 
-def compute_advantage(gamma, lmbda, td_error):
+def compute_advantage(gamma, 
+                      lmbda, 
+                      td_error):
     td_error = td_error.detach().numpy()
     advantage_list = []
     advantage = 0.0
@@ -139,7 +148,10 @@ def moving_average_score(data, window_size=10):
 # ---------------------------------------------------------------------------------------------
 # Functions to save and load models, checkpoints, return_list, curves and logs
 # ---------------------------------------------------------------------------------------------
-def save_agent(agent, model_name, save_dir='./agent', score=None):
+def save_agent(agent, 
+               model_name, 
+               save_dir='./agent', 
+               score=None):
     os.makedirs(save_dir, exist_ok=True)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     if score is not None:
@@ -151,7 +163,10 @@ def save_agent(agent, model_name, save_dir='./agent', score=None):
 
     _save_log(save_dir, model_name, save_path, score)
 
-def save_multi_agents(agent_dict, model_name, save_dir='./agent', score=None):
+def save_multi_agents(agent_dict, 
+                      model_name, 
+                      save_dir='./agent', 
+                      score=None):
     os.makedirs(save_dir, exist_ok=True)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     if score is not None:
@@ -163,7 +178,11 @@ def save_multi_agents(agent_dict, model_name, save_dir='./agent', score=None):
     print(f"✅ Multi-agents saved at {save_path}")
     _save_log(save_dir, model_name, save_path, score)
 
-def save_checkpoint(agent_dict, optimizer_dict, episode, model_name, save_dir='./agent'):
+def save_checkpoint(agent_dict, 
+                    optimizer_dict, 
+                    episode, 
+                    model_name, 
+                    save_dir='./agent'):
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, f"{model_name}_checkpoint_ep{episode}.pth")
     state = {
@@ -175,14 +194,19 @@ def save_checkpoint(agent_dict, optimizer_dict, episode, model_name, save_dir='.
     print(f"✅ Checkpoint saved at {save_path}")
     _save_log(save_dir, model_name, save_path, note=f"Checkpoint at episode {episode}")
 
-def save_return_list(return_list, save_path='./results', filename='return_list.pkl'):
+def save_return_list(return_list, 
+                     save_path='./results', 
+                     filename='return_list.pkl'):
     os.makedirs(save_path, exist_ok=True)
     save_path = os.path.join(save_path, filename)
     with open(save_path, 'wb') as f:
         pickle.dump(return_list, f)
     print(f"✅ Return list saved at {save_path}")
 
-def save_return_curve(return_list, model_name, mv_return=None, save_dir='./results'):
+def save_return_curve(return_list, 
+                       model_name, 
+                       mv_return=None, 
+                       save_dir='./results'):
     os.makedirs(save_dir, exist_ok=True)
     plt.figure()
     plt.plot(return_list, label='Returns')
@@ -198,7 +222,13 @@ def save_return_curve(return_list, model_name, mv_return=None, save_dir='./resul
     plt.close()
     print(f"📈 Return curve saved at {curve_path}")
 
-def save_all(agent_dict, return_list, model_name, mv_return=None, score=None, save_dir_agent='./agent', save_dir_result='./results'):
+def save_all(agent_dict, 
+             return_list, 
+             model_name, 
+             mv_return=None, 
+             score=None, 
+             save_dir_agent='./agent', 
+             save_dir_result='./results'):
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     suffix = f"_score{score:.2f}_{timestamp}" if score is not None else f"_{timestamp}"
     
@@ -235,7 +265,13 @@ def save_all(agent_dict, return_list, model_name, mv_return=None, score=None, sa
     plt.close()
     print(f"📈 Return curve saved at {curve_path}")
 
-def load_all(agent_dict, model_name, timestamp, score=None, save_dir_agent='./agent', save_dir_result='./results', device='cpu'):
+def load_all(agent_dict, 
+              model_name, 
+              timestamp, 
+              score=None, 
+              save_dir_agent='./agent', 
+              save_dir_result='./results', 
+              device='cpu'):
     suffix = f"_score{score:.2f}_{timestamp}" if score is not None else f"_{timestamp}"
 
     # Load model
@@ -262,20 +298,27 @@ def load_all(agent_dict, model_name, timestamp, score=None, save_dir_agent='./ag
 
 
 
-def load_agent(agent, load_path, device):
+def load_agent(agent, 
+               load_path, 
+               device):
     state_dict = torch.load(load_path, map_location=device)
     agent.load_state_dict(state_dict)
     print(f"🔄 Single agent loaded from {load_path}")
     return agent
 
-def load_multi_agents(agent_dict, load_path, device):
+def load_multi_agents(agent_dict, 
+                      load_path, 
+                      device):
     state_dicts = torch.load(load_path, map_location=device)
     for name, agent in agent_dict.items():
         agent.load_state_dict(state_dicts[name])
     print(f"🔄 Multi-agents loaded from {load_path}")
     return agent_dict
 
-def load_checkpoint(agent_dict, optimizer_dict, load_path, device):
+def load_checkpoint(agent_dict, 
+                    optimizer_dict, 
+                    load_path, 
+                    device):
     checkpoint = torch.load(load_path, map_location=device)
     for name, agent in agent_dict.items():
         agent.load_state_dict(checkpoint['agent_state_dict'][name])
@@ -291,7 +334,11 @@ def load_return_list(filepath):
     print(f"🔄 Return list loaded from {filepath}")
     return return_list
 
-def _save_log(save_dir, model_name, save_path, score=None, note=None):
+def _save_log(save_dir, 
+               model_name, 
+               save_path, 
+               score=None, 
+               note=None):
     log_path = os.path.join(save_dir, "save_log.json")
     log_data = []
     if os.path.exists(log_path):
@@ -317,7 +364,11 @@ def _save_log(save_dir, model_name, save_path, score=None, note=None):
 # ---------------------------------------------------------------------------------------------------------------
 # Functions to display and record agent performance
 # ---------------------------------------------------------------------------------------------------------------
-def watch_agent(env_name, agent, device, sleep_time=0.01, num_episodes=1):
+def watch_agent(env_name, 
+                agent, 
+                device, 
+                sleep_time=0.01, 
+                num_episodes=1):
     env_fn = lambda: gym.make(env_name, render_mode='human')
     for i in range(num_episodes):
         env = env_fn()
@@ -337,7 +388,13 @@ def watch_agent(env_name, agent, device, sleep_time=0.01, num_episodes=1):
         env.close()
 
 
-def record_one_episode(env_name, agent, device, save_dir='./video', filename='agent_play', score=None, fps=30):
+def record_one_episode(env_name, 
+                       agent, 
+                       device, 
+                       save_dir='./video', 
+                       filename='agent_play', 
+                       score=None, 
+                       fps=30):
     os.makedirs(save_dir, exist_ok=True)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     if score is not None:
@@ -367,7 +424,15 @@ def record_one_episode(env_name, agent, device, save_dir='./video', filename='ag
     clip.write_gif(save_path, fps=fps)
     print(f"✅ Video saved at {save_path}")
 
-def record_multiple_episodes(env_name, agent, device, num_episodes=10, videos_per_row=5, save_dir='./video', filename='agent_multi_play', score=None, fps=30):
+def record_multiple_episodes(env_name, 
+                             agent, 
+                             device, 
+                             num_episodes=10, 
+                             videos_per_row=5, 
+                             save_dir='./video', 
+                             filename='agent_multi_play', 
+                             score=None, 
+                             fps=30):
     os.makedirs(save_dir, exist_ok=True)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     if score is not None:
