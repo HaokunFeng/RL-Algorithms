@@ -28,5 +28,17 @@
         "save_path": "./agent/ddpg_pendulum(v1)_score-156.32_20250502-022144.pth",
         "timestamp": "2025-05-02 02:21:44",
         "score": -156.32471084579862
+    },
+    {
+        "model_name": "sac_pendulum(v1)",
+        "save_path": "./agent/sac_pendulum(v1)_score-230.13_20250503-060454.pth",
+        "timestamp": "2025-05-03 06:04:54",
+        "score": -230.12911005353513
+    },
+    {
+        "model_name": "sac_cartpole(v0)",
+        "save_path": "./agent/sac_cartpole(v0)_score156.10_20250503-184850.pth",
+        "timestamp": "2025-05-03 18:48:50",
+        "score": 156.1
     }
 ]
