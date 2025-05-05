@@ -40,5 +40,17 @@
         "save_path": "./agent/sac_cartpole(v0)_score156.10_20250503-184850.pth",
         "timestamp": "2025-05-03 18:48:50",
         "score": 156.1
+    },
+    {
+        "model_name": "bc(ppo-c)_cartpole(v0)",
+        "save_path": "./agent/bc(ppo-c)_cartpole(v0)_score200.00_20250504-180923.pth",
+        "timestamp": "2025-05-04 18:09:23",
+        "score": 200.0
+    },
+    {
+        "model_name": "gail(ppo-c)_cartpole(v0)",
+        "save_path": "./agent/gail(ppo-c)_cartpole(v0)_score200.00_20250505-013650.pth",
+        "timestamp": "2025-05-05 01:36:50",
+        "score": 200.0
     }
 ]
